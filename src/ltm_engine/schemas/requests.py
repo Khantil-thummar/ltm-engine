@@ -124,11 +124,11 @@ class ConsolidateRequest(BaseModel):
     time_window: TimeWindow | None = Field(
         default=None, description="Only consolidate memories in this time window"
     )
-    min_memories: int = Field(
-        default=5, ge=1, description="Minimum episodic memories to consolidate"
+    min_memories: int | None = Field(
+        default=None, ge=1, description="Minimum episodic memories to consolidate (uses config default if not set)"
     )
-    max_memories: int = Field(
-        default=50, ge=1, description="Maximum episodic memories per consolidation"
+    max_memories: int | None = Field(
+        default=None, ge=1, description="Maximum episodic memories per consolidation (uses config default if not set)"
     )
     force: bool = Field(
         default=False, description="Force consolidation even below threshold"
