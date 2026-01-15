@@ -336,9 +336,15 @@ COMPRESSED → summarized to reduce storage
 
 ### Detection Process
 
-1. **Embedding Similarity**: Find memories with similarity > 0.8
-2. **LLM Analysis**: Use GPT-4o-mini to analyze contradiction
-3. **Confidence Score**: Rate conflict certainty
+1. **Embedding Similarity**: Find memories with similarity > 0.3 (configurable threshold)
+2. **LLM Analysis**: Use GPT-4o-mini to analyze if content contradicts
+3. **Confidence Score**: Rate conflict certainty (0.0 to 1.0)
+
+### Duplicate Detection
+
+Before storing semantic memories, the system checks for near-duplicates:
+- If similarity >= 98% AND not a contradiction → Skip storing, return existing memory
+- This prevents redundant storage of identical information
 
 ### Resolution Strategies
 
@@ -458,6 +464,42 @@ COMPRESSED → summarized to reduce storage
 - Health check endpoint
 - Event timestamps for debugging
 - Sequence numbers for ordering
+
+## API Endpoints Summary
+
+### Memory Operations
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/memory/episodic` | POST | Store episodic memory |
+| `/api/v1/memory/semantic` | POST | Store semantic memory (with conflict detection) |
+| `/api/v1/memory/procedural` | POST | Store procedural memory |
+| `/api/v1/memory/retrieve` | POST | Hybrid search with ranking |
+| `/api/v1/memory/semantic/{id}` | PUT | Update semantic memory (creates version) |
+| `/api/v1/memory/procedural/key/{key}` | GET | Get preference by key |
+
+### Temporal Operations
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/memory/temporal/evolution/{id}` | GET | Get version history |
+| `/api/v1/memory/replay` | POST | Reconstruct state at timestamp |
+| `/api/v1/memory/timeline` | GET | Get agent event log |
+
+### Lifecycle Operations
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/memory/consolidate` | POST | Episodic → Semantic via LLM |
+| `/api/v1/memory/decay` | POST | Apply importance decay |
+| `/api/v1/memory/forget` | POST | Soft/hard delete memories |
+
+### System
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/health` | GET | Health check |
+| `/api/v1/agents` | GET | List all agents with stats |
+
+## Testing
+
+See the **[API Testing Guide](API_TESTING_GUIDE.md)** for comprehensive curl commands to test all endpoints.
 
 ---
 
