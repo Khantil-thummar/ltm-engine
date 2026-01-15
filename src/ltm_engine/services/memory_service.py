@@ -195,14 +195,17 @@ class MemoryService:
                 # It's a duplicate - return existing memory instead
                 existing_id = conflict_info.get("existing_memory_id")
                 if existing_id:
+                    memory_uuid = uuid.UUID(existing_id) if isinstance(existing_id, str) else existing_id
+                    # Bug fix 1: Pass agent_id for tenant isolation validation
                     existing_memory = await self._semantic_repo.get_by_id(
-                        uuid.UUID(existing_id) if isinstance(existing_id, str) else existing_id
+                        memory_uuid, agent_id=agent_id
                     )
                     if existing_memory:
-                        # Increment access count as reinforcement
-                        existing_memory.access_count += 1
-                        existing_memory.last_accessed_at = utc_now()
+                        # Bug fix 2: Use atomic SQL increment to prevent race conditions
+                        await self._semantic_repo.increment_access(memory_uuid)
                         await self._session.commit()
+                        # Refresh to get updated values
+                        await self._session.refresh(existing_memory)
                         # Return existing memory, no conflict
                         return existing_memory, None
 
