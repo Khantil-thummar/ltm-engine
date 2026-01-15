@@ -184,6 +184,9 @@ class ForgetRequest(BaseModel):
     older_than: datetime | None = Field(
         default=None, description="Only forget memories older than this"
     )
+    max_count: int | None = Field(
+        default=None, ge=1, description="Maximum number of memories to forget"
+    )
     confirm: bool = Field(
         default=False, description="Confirmation flag for destructive operations"
     )

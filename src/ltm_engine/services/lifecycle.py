@@ -294,6 +294,10 @@ class LifecycleService:
                 filters=request.filters,
             )
 
+            # Apply max_count limit if specified
+            if request.max_count is not None:
+                memories_to_forget = memories_to_forget[:request.max_count]
+
             for memory_id, memory_type in memories_to_forget:
                 success = await self._forget_single(
                     memory_id=memory_id,
