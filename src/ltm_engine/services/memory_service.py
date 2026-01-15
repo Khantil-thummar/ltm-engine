@@ -188,6 +188,24 @@ class MemoryService:
                 subject=data.subject,
             )
 
+        # Skip duplicates: if very similar (>=98%) and not a contradiction, return existing
+        if conflict_info and not conflict_info.get("is_contradiction", False):
+            similarity = conflict_info.get("similarity_score", 0)
+            if similarity >= 0.98:
+                # It's a duplicate - return existing memory instead
+                existing_id = conflict_info.get("existing_memory_id")
+                if existing_id:
+                    existing_memory = await self._semantic_repo.get_by_id(
+                        uuid.UUID(existing_id) if isinstance(existing_id, str) else existing_id
+                    )
+                    if existing_memory:
+                        # Increment access count as reinforcement
+                        existing_memory.access_count += 1
+                        existing_memory.last_accessed_at = utc_now()
+                        await self._session.commit()
+                        # Return existing memory, no conflict
+                        return existing_memory, None
+
         # Create memory record
         memory = SemanticMemory(
             agent_id=agent_id,
