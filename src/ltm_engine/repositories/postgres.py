@@ -321,23 +321,25 @@ class SemanticRepository:
         subject: str,
         as_of: datetime,
     ) -> SemanticMemory | None:
-        """Get the semantic memory valid at a specific time."""
+        """Get the semantic memory that had a version valid at a specific time."""
+        # First find the memory by subject (the main record's valid_from changes on update)
+        # Then we check versions to see if any was valid at the given time
         query = (
             select(SemanticMemory)
             .where(SemanticMemory.agent_id == agent_id)
             .where(SemanticMemory.subject.ilike(f"%{subject}%"))
-            .where(SemanticMemory.valid_from <= as_of)
-            .where(
-                or_(
-                    SemanticMemory.valid_until.is_(None),
-                    SemanticMemory.valid_until > as_of,
-                )
-            )
-            .order_by(SemanticMemory.valid_from.desc())
-            .limit(1)
+            .where(SemanticMemory.created_at <= as_of)  # Memory must have existed
         )
         result = await self._session.execute(query)
-        return result.scalar_one_or_none()
+        memories = result.scalars().all()
+        
+        # For each memory, check if it had a valid version at as_of
+        for memory in memories:
+            version = await self.get_version_at(memory.id, as_of)
+            if version:
+                return memory
+        
+        return None
 
     async def get_version_at(
         self,
