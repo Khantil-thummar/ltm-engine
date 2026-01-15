@@ -54,8 +54,11 @@ class Settings(BaseSettings):
     # Memory Configuration
     default_top_k: int = Field(default=10, ge=1, le=100)
     decay_half_life_days: float = Field(default=30.0, gt=0)
-    consolidation_threshold: int = Field(
-        default=50, ge=1, description="Number of episodic memories before consolidation"
+    consolidation_min_memories: int = Field(
+        default=5, ge=1, description="Minimum episodic memories required for consolidation"
+    )
+    consolidation_max_memories: int = Field(
+        default=50, ge=1, description="Maximum episodic memories per consolidation batch"
     )
     min_confidence_threshold: float = Field(
         default=0.1, ge=0.0, le=1.0, description="Minimum confidence to keep memory"

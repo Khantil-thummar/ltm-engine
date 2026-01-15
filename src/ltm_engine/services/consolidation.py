@@ -67,11 +67,15 @@ class ConsolidationService:
         key facts and knowledge from them.
         """
         agent_id = request.agent_id or self._settings.default_agent_id
+        
+        # Use config values as defaults if not specified in request
+        min_memories = request.min_memories or self._settings.consolidation_min_memories
+        max_memories = request.max_memories or self._settings.consolidation_max_memories
 
         # Get unconsolidated episodic memories
         episodic_memories = await self._episodic_repo.list_unconsolidated(
             agent_id=agent_id,
-            limit=request.max_memories,
+            limit=max_memories,
         )
 
         # Filter by time window if specified
@@ -95,13 +99,13 @@ class ConsolidationService:
             ]
 
         # Check if we have enough memories to consolidate
-        if len(episodic_memories) < request.min_memories and not request.force:
+        if len(episodic_memories) < min_memories and not request.force:
             return ConsolidateResponse(
                 success=True,
                 consolidated_count=0,
                 results=[],
                 agent_id=agent_id,
-                message=f"Not enough memories to consolidate. Have {len(episodic_memories)}, need {request.min_memories}.",
+                message=f"Not enough memories to consolidate. Have {len(episodic_memories)}, need {min_memories}.",
             )
 
         if not episodic_memories:
