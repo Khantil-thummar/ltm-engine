@@ -323,15 +323,15 @@ class SemanticRepository:
     ) -> SemanticMemory | None:
         """Get the semantic memory that had a version valid at a specific time."""
         # Find memories by subject that existed at the query time.
-        # Order by valid_from DESC to prioritize actively maintained (recently updated)
-        # memories as the canonical source when multiple subject matches exist.
+        # Order by updated_at DESC to prioritize actively maintained memories
+        # (most recently modified in the system) when multiple subject matches exist.
         # The version lookup below determines what was actually valid at as_of.
         query = (
             select(SemanticMemory)
             .where(SemanticMemory.agent_id == agent_id)
             .where(SemanticMemory.subject.ilike(f"%{subject}%"))
             .where(SemanticMemory.created_at <= as_of)  # Memory must have existed
-            .order_by(SemanticMemory.valid_from.desc())
+            .order_by(SemanticMemory.updated_at.desc())
         )
         result = await self._session.execute(query)
         memories = result.scalars().all()
