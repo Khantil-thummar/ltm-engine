@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import structlog
+from sqlalchemy import select, func, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ltm_engine.config import Settings
@@ -521,6 +522,59 @@ class MemoryService:
         await self._session.commit()
 
     # =========================================================================
+    # Agent Management
+    # =========================================================================
+
+    async def get_all_agents(self) -> list[dict[str, Any]]:
+        """Get all distinct agents with their memory statistics."""
+        # Get distinct agent_ids from all memory tables
+        episodic_agents = select(
+            EpisodicMemory.agent_id.label("agent_id")
+        ).distinct()
+        
+        semantic_agents = select(
+            SemanticMemory.agent_id.label("agent_id")
+        ).distinct()
+        
+        procedural_agents = select(
+            ProceduralMemory.agent_id.label("agent_id")
+        ).distinct()
+        
+        # Union all agent IDs
+        all_agents = union_all(episodic_agents, semantic_agents, procedural_agents).subquery()
+        distinct_agents = select(all_agents.c.agent_id).distinct()
+        
+        result = await self._session.execute(distinct_agents)
+        agent_ids = [row[0] for row in result.fetchall()]
+        
+        agents = []
+        for agent_id in agent_ids:
+            # Count memories for each type
+            ep_count = await self._session.execute(
+                select(func.count()).where(EpisodicMemory.agent_id == agent_id)
+            )
+            sem_count = await self._session.execute(
+                select(func.count()).where(SemanticMemory.agent_id == agent_id)
+            )
+            proc_count = await self._session.execute(
+                select(func.count()).where(ProceduralMemory.agent_id == agent_id)
+            )
+            
+            ep = ep_count.scalar() or 0
+            sem = sem_count.scalar() or 0
+            proc = proc_count.scalar() or 0
+            
+            agents.append({
+                "agent_id": agent_id,
+                "episodic_count": ep,
+                "semantic_count": sem,
+                "procedural_count": proc,
+                "total_memories": ep + sem + proc,
+            })
+        
+        return agents
+
+    # =========================================================================
     # Helper Methods
     # =========================================================================
 
@@ -537,7 +591,7 @@ class MemoryService:
             query_vector=embedding,
             agent_id=agent_id,
             memory_type=MemoryType.SEMANTIC.value,
-            threshold=0.8,  # High similarity threshold
+            threshold=0.3,  # Lower threshold to catch more conflicts
         )
 
         if not similar:

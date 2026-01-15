@@ -587,25 +587,27 @@ def create_router() -> APIRouter:
     )
     async def list_agents(
         service: MemoryService = Depends(get_memory_service),
-        settings: Settings = Depends(get_settings),
     ):
         """List all agents with memory statistics."""
-        # This is a simplified implementation
-        # In production, you'd query distinct agent_ids from the database
+        agents_data = await service.get_all_agents()
+        
+        agents = [
+            AgentStats(
+                agent_id=a["agent_id"],
+                episodic_count=a["episodic_count"],
+                semantic_count=a["semantic_count"],
+                procedural_count=a["procedural_count"],
+                total_memories=a["total_memories"],
+                oldest_memory=None,
+                newest_memory=None,
+                average_confidence=1.0,
+            )
+            for a in agents_data
+        ]
+        
         return AgentListResponse(
-            agents=[
-                AgentStats(
-                    agent_id=settings.default_agent_id,
-                    episodic_count=0,
-                    semantic_count=0,
-                    procedural_count=0,
-                    total_memories=0,
-                    oldest_memory=None,
-                    newest_memory=None,
-                    average_confidence=1.0,
-                )
-            ],
-            total_agents=1,
+            agents=agents,
+            total_agents=len(agents),
         )
 
     return router
