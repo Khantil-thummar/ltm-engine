@@ -423,8 +423,13 @@ class LifecycleService:
         older_than: datetime | None,
         filters: Any | None,
     ) -> list[tuple[uuid.UUID, str]]:
-        """Find memories matching forget criteria."""
-        results: list[tuple[uuid.UUID, str]] = []
+        """
+        Find memories matching forget criteria.
+        
+        Returns memories sorted by importance (lowest first) then by age (oldest first).
+        This ensures least important and oldest memories are forgotten first.
+        """
+        results: list[tuple[uuid.UUID, str, float, datetime]] = []
 
         if "episodic" in memory_types:
             memories = await self._episodic_repo.list_by_agent(
@@ -433,7 +438,7 @@ class LifecycleService:
             )
             for m in memories:
                 if self._matches_forget_criteria(m, max_importance, older_than):
-                    results.append((m.id, "episodic"))
+                    results.append((m.id, "episodic", m.importance_score, m.created_at))
 
         if "semantic" in memory_types:
             memories = await self._semantic_repo.list_by_agent(
@@ -442,7 +447,7 @@ class LifecycleService:
             )
             for m in memories:
                 if self._matches_forget_criteria(m, max_importance, older_than):
-                    results.append((m.id, "semantic"))
+                    results.append((m.id, "semantic", m.importance_score, m.created_at))
 
         if "procedural" in memory_types:
             memories = await self._procedural_repo.list_by_agent(
@@ -451,9 +456,14 @@ class LifecycleService:
             )
             for m in memories:
                 if self._matches_forget_criteria(m, max_importance, older_than, use_confidence=True):
-                    results.append((m.id, "procedural"))
+                    results.append((m.id, "procedural", m.confidence, m.created_at))
 
-        return results
+        # Sort by importance/confidence ascending (lowest first), then by created_at ascending (oldest first)
+        # This ensures least important and oldest memories are forgotten first
+        results.sort(key=lambda x: (x[2], x[3]))
+        
+        # Return only (id, type) tuples
+        return [(r[0], r[1]) for r in results]
 
     def _matches_forget_criteria(
         self,

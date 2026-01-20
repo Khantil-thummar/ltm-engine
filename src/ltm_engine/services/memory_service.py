@@ -271,14 +271,31 @@ class MemoryService:
             },
         )
 
-        # Handle superseding if conflict detected
-        if conflict_info and conflict_info.get("resolution") == "supersede":
-            existing_id = conflict_info.get("existing_memory_id")
-            if existing_id:
-                await self._semantic_repo.supersede(
-                    uuid.UUID(existing_id),
-                    memory.id,
-                )
+        # Handle conflict resolution
+        if conflict_info and conflict_info.get("is_contradiction"):
+            resolution = conflict_info.get("resolution", "keep_both")
+            
+            if resolution == "supersede":
+                # Mark existing as superseded by new
+                existing_id = conflict_info.get("existing_memory_id")
+                if existing_id:
+                    await self._semantic_repo.supersede(
+                        uuid.UUID(existing_id),
+                        memory.id,
+                    )
+                    # Update vector store status for existing
+                    await self._qdrant.update_payload(
+                        existing_id,
+                        {"status": MemoryStatus.SUPERSEDED.value},
+                    )
+            
+            elif resolution == "reject_new":
+                # Mark new memory as deleted - it contradicts existing
+                memory.status = MemoryStatus.DELETED.value
+                await self._session.flush()
+                
+                # Remove from vector store (rejected memories shouldn't be searchable)
+                await self._qdrant.delete(str(memory.id))
 
         # Record event
         await self._record_event(
