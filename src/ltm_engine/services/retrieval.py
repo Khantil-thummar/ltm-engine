@@ -283,6 +283,7 @@ class RetrievalService:
             if memory_type == MemoryType.EPISODIC.value:
                 retrieved.event_timestamp = memory.event_timestamp
                 retrieved.source = memory.source
+                retrieved.session_id = memory.session_id
             elif memory_type == MemoryType.SEMANTIC.value:
                 retrieved.subject = memory.subject
                 retrieved.category = memory.category
@@ -320,12 +321,11 @@ class RetrievalService:
         if filters.sources:
             filtered = [r for r in filtered if r.source in filters.sources]
 
-        # Filter by session_id
+        # Filter by session_id (for episodic memories)
         if filters.session_id:
-            # This requires checking the metadata for episodic memories
             filtered = [
                 r for r in filtered
-                if r.metadata.get("session_id") == filters.session_id
+                if r.session_id == filters.session_id
             ]
 
         return filtered

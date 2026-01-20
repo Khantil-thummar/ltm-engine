@@ -395,8 +395,7 @@ curl -X POST "http://localhost:8000/api/v1/memory/retrieve" \
 
 ## Test 21: Memory Consolidation
 
-Consolidate episodic memories into semantic knowledge (requires 5+ episodic memories).
-
+Consolidate episodic memories into semantic knowledge.
 First, add more episodic memories:
 
 ```bash
@@ -432,50 +431,3 @@ curl -X POST "http://localhost:8000/api/v1/memory/consolidate" \
 
 ---
 
-## Reset for Fresh Testing
-
-To start fresh:
-
-```bash
-# Stop API server (Ctrl+C)
-
-# Remove all data
-docker compose down -v
-
-# Start fresh
-docker compose up -d
-
-# Start API
-python -m ltm_engine.main
-```
-
----
-
-## Quick Reference
-
-| Feature | Endpoint | Method |
-|---------|----------|--------|
-| Health Check | `/api/v1/health` | GET |
-| Store Episodic | `/api/v1/memory/episodic` | POST |
-| Store Semantic | `/api/v1/memory/semantic` | POST |
-| Store Procedural | `/api/v1/memory/procedural` | POST |
-| Update Semantic | `/api/v1/memory/semantic/{id}` | PUT |
-| Get Preference | `/api/v1/memory/procedural/key/{key}` | GET |
-| Search | `/api/v1/memory/retrieve` | POST |
-| Version History | `/api/v1/memory/temporal/evolution/{id}` | GET |
-| Timeline | `/api/v1/memory/timeline` | GET |
-| Replay | `/api/v1/memory/replay` | POST |
-| Consolidate | `/api/v1/memory/consolidate` | POST |
-| Decay | `/api/v1/memory/decay` | POST |
-| Forget | `/api/v1/memory/forget` | POST |
-| List Agents | `/api/v1/agents` | GET |
-
----
-
-## Swagger UI
-
-For interactive testing, use the built-in Swagger documentation:
-
-**http://localhost:8000/docs**
-
-This provides a visual interface to test all endpoints with request/response examples.

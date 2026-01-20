@@ -20,8 +20,17 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # OpenAI Configuration
-    openai_api_key: str = Field(..., description="OpenAI API key")
+    # Provider Selection
+    use_ollama: bool = Field(default=False, description="Use Ollama instead of OpenAI")
+
+    # OpenAI Configuration (required if use_ollama=False)
+    openai_api_key: str = Field(default="", description="OpenAI API key")
+
+    # Ollama Configuration (used if use_ollama=True)
+    ollama_llm_model: str = Field(default="llama3.2", description="Ollama LLM model")
+    ollama_embedding_model: str = Field(
+        default="nomic-embed-text", description="Ollama embedding model"
+    )
 
     # LLM Settings
     llm_model: str = Field(default="gpt-4o-mini", description="LLM model for reasoning")

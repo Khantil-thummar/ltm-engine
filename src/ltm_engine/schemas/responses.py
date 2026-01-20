@@ -54,6 +54,7 @@ class RetrievedMemory(BaseModel):
     key: str | None = None  # For procedural
     event_timestamp: datetime | None = None  # For episodic
     source: str | None = None  # For episodic
+    session_id: str | None = None  # For episodic
     version: int | None = None  # For semantic
     valid_from: datetime | None = None  # For semantic
     valid_until: datetime | None = None  # For semantic
